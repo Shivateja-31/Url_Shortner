@@ -143,3 +143,6 @@ app.get('/api/admin/all-urls', (req, res) => {
 app.listen(PORT, () => {
   console.log(`URL Shortener running on port ${PORT}`);
 });
+
+// Export for Vercel
+module.exports = app;
