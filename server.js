@@ -38,6 +38,11 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// Serve admin.html for admin route
+app.get('/admin.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
 app.post('/api/shorten', (req, res) => {
   const { url } = req.body;
   
@@ -111,6 +116,21 @@ app.get('/api/stats/:shortCode', (req, res) => {
       }
 
       res.json(row);
+    }
+  );
+});
+
+// Admin endpoint to get all URLs
+app.get('/api/admin/all-urls', (req, res) => {
+  db.all(
+    'SELECT * FROM urls ORDER BY created_at DESC',
+    [],
+    (err, rows) => {
+      if (err) {
+        return res.status(500).json({ error: 'Database error' });
+      }
+      
+      res.json(rows);
     }
   );
 });
