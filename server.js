@@ -3,6 +3,7 @@ const sqlite3 = require('sqlite3').verbose();
 const { nanoid } = require('nanoid');
 const cors = require('cors');
 const path = require('path');
+const { Analytics } = require('@vercel/analytics');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -11,6 +12,7 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
+app.use(Analytics());
 
 // Database setup
 const db = new sqlite3.Database('./urls.db');
@@ -59,6 +61,14 @@ app.post('/api/shorten', (req, res) => {
         shortCode,
         originalUrl: url
       });
+      
+      // Track analytics event
+      if (req.analytics) {
+        req.analytics.track('url_shortened', {
+          shortCode,
+          urlLength: url.length
+        });
+      }
     }
   );
 });
@@ -83,6 +93,14 @@ app.get('/:shortCode', (req, res) => {
         'UPDATE urls SET clicks = clicks + 1 WHERE short_code = ?',
         [shortCode]
       );
+
+      // Track analytics event
+      if (req.analytics) {
+        req.analytics.track('url_redirected', {
+          shortCode,
+          originalUrl: row.original_url
+        });
+      }
 
       res.redirect(row.original_url);
     }

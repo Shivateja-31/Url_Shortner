@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>URL Shortener</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+    </script>
+    <script defer src="/_vercel/insights/script.js"></script>
 </head>
 <body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
     <div class="container mx-auto px-4 py-12">
@@ -87,6 +91,13 @@
 
                 if (response.ok) {
                     showResult(data);
+                    // Track analytics event
+                    if (window.va) {
+                        window.va('track', 'URL Shortened', {
+                            shortCode: data.shortCode,
+                            urlLength: url.length
+                        });
+                    }
                 } else {
                     showError(data.error || 'Something went wrong');
                 }
@@ -121,6 +132,11 @@
             const shortUrlInput = document.getElementById('shortUrl');
             shortUrlInput.select();
             document.execCommand('copy');
+            
+            // Track analytics event
+            if (window.va) {
+                window.va('track', 'URL Copied');
+            }
             
             // Change button text temporarily
             const button = event.target;
