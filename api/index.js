@@ -3,19 +3,26 @@ const sqlite3 = require('sqlite3').verbose();
 const { nanoid } = require('nanoid');
 const cors = require('cors');
 const path = require('path');
+const cookieParser = require('cookie-parser');
+const AnalyticsManager = require('./analytics');
+const AdminAuth = require('./auth');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Initialize analytics and auth
+const dbPath = process.env.NODE_ENV === 'production' ? '/tmp/urls.db' : './urls.db';
+const db = new sqlite3.Database(dbPath);
+const analytics = new AnalyticsManager(dbPath);
+const auth = new AdminAuth();
+
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use(cookieParser());
+app.use(express.static('public'));
 
-// Database setup (use /tmp for Vercel)
-const dbPath = process.env.NODE_ENV === 'production' ? '/tmp/urls.db' : './urls.db';
-const db = new sqlite3.Database(dbPath);
-
-// Create table if not exists
+// Create main URLs table if not exists
 db.serialize(() => {
   db.run(`CREATE TABLE IF NOT EXISTS urls (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -32,6 +39,44 @@ function generateShortCode() {
 }
 
 // Routes
+// Serve index.html for root route
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
+});
+
+// Admin login page
+app.get('/admin/login', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'admin-login.html'));
+});
+
+// Serve admin.html for admin route (protected)
+app.get('/admin', auth.requireAuth.bind(auth), (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'admin.html'));
+});
+
+// Serve admin.html for admin.html route (protected)
+app.get('/admin.html', auth.requireAuth.bind(auth), (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'admin.html'));
+});
+
+// Admin login API
+app.post('/api/admin/login', (req, res) => {
+  const { password } = req.body;
+  
+  if (!auth.verifyPassword(password)) {
+    return res.status(401).json({ error: 'Invalid password' });
+  }
+  
+  auth.createSession(res);
+  res.json({ success: true, message: 'Logged in successfully' });
+});
+
+// Admin logout API
+app.post('/api/admin/logout', (req, res) => {
+  res.clearCookie('admin_session');
+  res.json({ success: true, message: 'Logged out successfully' });
+});
+
 app.post('/api/shorten', (req, res) => {
   const { url } = req.body;
   
@@ -52,6 +97,9 @@ app.post('/api/shorten', (req, res) => {
         }
         return res.status(500).json({ error: 'Database error' });
       }
+      
+      // Track URL creation in analytics
+      analytics.trackUrlCreation();
       
       res.json({
         shortUrl,
@@ -83,6 +131,9 @@ app.get('/:shortCode', (req, res) => {
         [shortCode]
       );
 
+      // Track click analytics
+      analytics.trackUrlClick(shortCode, req);
+
       res.redirect(row.original_url);
     }
   );
@@ -108,19 +159,53 @@ app.get('/api/stats/:shortCode', (req, res) => {
   );
 });
 
-// Admin endpoint to get all URLs
-app.get('/api/admin/all-urls', (req, res) => {
+// Admin endpoint to get all URLs (protected)
+app.get('/api/admin/all-urls', auth.requireAuth.bind(auth), (req, res) => {
+  console.log('Fetching all URLs...');
   db.all(
     'SELECT * FROM urls ORDER BY created_at DESC',
     [],
     (err, rows) => {
       if (err) {
+        console.error('Database error:', err);
         return res.status(500).json({ error: 'Database error' });
       }
       
+      console.log('Found URLs:', rows.length);
       res.json(rows);
     }
   );
+});
+
+// Advanced analytics endpoint (protected)
+app.get('/api/admin/analytics', auth.requireAuth.bind(auth), (req, res) => {
+  analytics.getAnalytics((err, data) => {
+    if (err) {
+      return res.status(500).json({ error: 'Analytics error' });
+    }
+    res.json(data);
+  });
+});
+
+// URL-specific analytics (protected)
+app.get('/api/admin/url-analytics/:shortCode', auth.requireAuth.bind(auth), (req, res) => {
+  const { shortCode } = req.params;
+  
+  analytics.getUrlAnalytics(shortCode, (err, data) => {
+    if (err) {
+      return res.status(500).json({ error: 'Analytics error' });
+    }
+    res.json(data);
+  });
+});
+
+// Debug endpoint
+app.get('/api/debug', (req, res) => {
+  res.json({
+    message: 'API is working',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development'
+  });
 });
 
 // Export for Vercel

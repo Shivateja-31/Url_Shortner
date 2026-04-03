@@ -5,50 +5,99 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>URL Shortener Admin Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="bg-gray-50 min-h-screen">
     <div class="container mx-auto px-4 py-8">
-        <div class="max-w-6xl mx-auto">
-            <h1 class="text-3xl font-bold text-gray-800 mb-8">
-                📊 URL Shortener Admin Dashboard
-            </h1>
+        <div class="max-w-7xl mx-auto">
+            <!-- Header -->
+            <div class="flex justify-between items-center mb-8">
+                <h1 class="text-3xl font-bold text-gray-800">
+                    📊 Advanced Analytics Dashboard
+                </h1>
+                <div class="flex gap-4">
+                    <button onclick="refreshData()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors">
+                        🔄 Refresh
+                    </button>
+                    <button onclick="logout()" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors">
+                        🚪 Logout
+                    </button>
+                </div>
+            </div>
             
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <!-- Overview Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                 <div class="bg-white rounded-lg shadow p-6">
                     <h3 class="text-lg font-semibold text-gray-700 mb-2">Total URLs</h3>
                     <p class="text-3xl font-bold text-blue-600" id="totalUrls">0</p>
+                    <p class="text-sm text-gray-500 mt-1">All time</p>
                 </div>
                 <div class="bg-white rounded-lg shadow p-6">
                     <h3 class="text-lg font-semibold text-gray-700 mb-2">Total Clicks</h3>
                     <p class="text-3xl font-bold text-green-600" id="totalClicks">0</p>
+                    <p class="text-sm text-gray-500 mt-1">All time</p>
                 </div>
                 <div class="bg-white rounded-lg shadow p-6">
-                    <h3 class="text-lg font-semibold text-gray-700 mb-2">Avg Clicks/URL</h3>
-                    <p class="text-3xl font-bold text-purple-600" id="avgClicks">0</p>
+                    <h3 class="text-lg font-semibold text-gray-700 mb-2">Total Visitors</h3>
+                    <p class="text-3xl font-bold text-purple-600" id="totalVisitors">0</p>
+                    <p class="text-sm text-gray-500 mt-1">Unique users</p>
+                </div>
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-2">Days Active</h3>
+                    <p class="text-3xl font-bold text-orange-600" id="daysActive">0</p>
+                    <p class="text-sm text-gray-500 mt-1">Since launch</p>
                 </div>
             </div>
 
-            <div class="bg-white rounded-lg shadow-lg p-6">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-xl font-semibold text-gray-800">All URLs</h2>
-                    <button onclick="refreshData()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors">
-                        🔄 Refresh
-                    </button>
+            <!-- Charts Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4">📈 Daily Activity (30 Days)</h2>
+                    <canvas id="dailyChart" width="400" height="200"></canvas>
                 </div>
-                
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4">👥 Visitor Trends</h2>
+                    <canvas id="visitorChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+
+            <!-- Top URLs Table -->
+            <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+                <h2 class="text-xl font-semibold text-gray-800 mb-6">🏆 Top Performing URLs</h2>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full table-auto">
+                        <thead class="bg-gray-100">
+                            <tr>
+                                <th class="px-4 py-2 text-left text-sm font-medium text-gray-700">Rank</th>
+                                <th class="px-4 py-2 text-left text-sm font-medium text-gray-700">Short Code</th>
+                                <th class="px-4 py-2 text-left text-sm font-medium text-gray-700">Original URL</th>
+                                <th class="px-4 py-2 text-left text-sm font-medium text-gray-700">Clicks</th>
+                                <th class="px-4 py-2 text-left text-sm font-medium text-gray-700">Created</th>
+                                <th class="px-4 py-2 text-left text-sm font-medium text-gray-700">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="topUrlsTableBody" class="divide-y divide-gray-200">
+                            <!-- Data will be inserted here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-xl font-semibold text-gray-800 mb-6">⏰ Recent Activity</h2>
                 <div class="overflow-x-auto">
                     <table class="min-w-full table-auto">
                         <thead class="bg-gray-100">
                             <tr>
                                 <th class="px-4 py-2 text-left text-sm font-medium text-gray-700">Short Code</th>
                                 <th class="px-4 py-2 text-left text-sm font-medium text-gray-700">Original URL</th>
-                                <th class="px-4 py-2 text-left text-sm font-medium text-gray-700">Short URL</th>
                                 <th class="px-4 py-2 text-left text-sm font-medium text-gray-700">Clicks</th>
                                 <th class="px-4 py-2 text-left text-sm font-medium text-gray-700">Created</th>
                                 <th class="px-4 py-2 text-left text-sm font-medium text-gray-700">Actions</th>
                             </tr>
                         </thead>
-                        <tbody id="urlsTableBody" class="divide-y divide-gray-200">
+                        <tbody id="recentActivityTableBody" class="divide-y divide-gray-200">
                             <!-- Data will be inserted here -->
                         </tbody>
                     </table>
@@ -58,21 +107,29 @@
     </div>
 
     <script>
-        async function fetchAllUrls() {
+        let dailyChart, visitorChart;
+
+        async function fetchAnalytics() {
             try {
-                // Since we don't have a direct endpoint, we'll create one
-                const response = await fetch('/api/admin/all-urls');
-                const urls = await response.json();
-                return urls;
+                const response = await fetch('/api/admin/analytics', {
+                    credentials: 'include'
+                });
+                const data = await response.json();
+                return data;
             } catch (error) {
-                console.error('Error fetching URLs:', error);
-                return [];
+                console.error('Error fetching analytics:', error);
+                return null;
             }
         }
 
         function formatDate(dateString) {
             const date = new Date(dateString);
             return date.toLocaleString();
+        }
+
+        function formatDateShort(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString();
         }
 
         function truncateUrl(url, maxLength = 50) {
@@ -92,29 +149,115 @@
             });
         }
 
-        async function refreshData() {
-            const urls = await fetchAllUrls();
-            const tbody = document.getElementById('urlsTableBody');
-            const totalUrlsEl = document.getElementById('totalUrls');
-            const totalClicksEl = document.getElementById('totalClicks');
-            const avgClicksEl = document.getElementById('avgClicks');
+        function updateOverviewCards(overview) {
+            document.getElementById('totalUrls').textContent = overview.total_urls || 0;
+            document.getElementById('totalClicks').textContent = overview.total_clicks || 0;
+            document.getElementById('daysActive').textContent = overview.days_active || 0;
+        }
 
-            if (urls.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="px-4 py-8 text-center text-gray-500">No URLs found. The database is empty.</td></tr>';
-                totalUrlsEl.textContent = '0';
-                totalClicksEl.textContent = '0';
-                avgClicksEl.textContent = '0';
+        function updateCharts(dailyStats, visitorStats) {
+            // Daily activity chart
+            const dailyCtx = document.getElementById('dailyChart').getContext('2d');
+            if (dailyChart) dailyChart.destroy();
+            
+            dailyChart = new Chart(dailyCtx, {
+                type: 'line',
+                data: {
+                    labels: dailyStats.map(d => formatDateShort(d.date)),
+                    datasets: [{
+                        label: 'URLs Created',
+                        data: dailyStats.map(d => d.new_urls || 0),
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.1
+                    }, {
+                        label: 'Clicks',
+                        data: dailyStats.map(d => d.total_clicks || 0),
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            // Visitor chart
+            const visitorCtx = document.getElementById('visitorChart').getContext('2d');
+            if (visitorChart) visitorChart.destroy();
+            
+            visitorChart = new Chart(visitorCtx, {
+                type: 'bar',
+                data: {
+                    labels: visitorStats.map(v => formatDateShort(v.visit_date)),
+                    datasets: [{
+                        label: 'Unique Visitors',
+                        data: visitorStats.map(v => v.total_visitors || 0),
+                        backgroundColor: 'rgba(147, 51, 234, 0.8)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateTopUrlsTable(topUrls) {
+            const tbody = document.getElementById('topUrlsTableBody');
+            
+            if (topUrls.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="px-4 py-8 text-center text-gray-500">No URLs found.</td></tr>';
                 return;
             }
 
-            const totalClicks = urls.reduce((sum, url) => sum + url.clicks, 0);
-            const avgClicks = (totalClicks / urls.length).toFixed(1);
+            tbody.innerHTML = topUrls.map((url, index) => `
+                <tr class="hover:bg-gray-50">
+                    <td class="px-4 py-3 text-sm font-bold">#${index + 1}</td>
+                    <td class="px-4 py-3 text-sm">
+                        <span class="font-mono bg-gray-100 px-2 py-1 rounded">${url.short_code}</span>
+                    </td>
+                    <td class="px-4 py-3 text-sm">
+                        <a href="${url.original_url}" target="_blank" class="text-blue-600 hover:underline" title="${url.original_url}">
+                            ${truncateUrl(url.original_url)}
+                        </a>
+                    </td>
+                    <td class="px-4 py-3 text-sm">
+                        <span class="font-semibold ${url.clicks > 0 ? 'text-green-600' : 'text-gray-400'}">${url.clicks}</span>
+                    </td>
+                    <td class="px-4 py-3 text-sm text-gray-600">
+                        ${formatDate(url.created_at)}
+                    </td>
+                    <td class="px-4 py-3 text-sm">
+                        <button onclick="copyToClipboard('${window.location.origin}/${url.short_code}')" class="text-xs px-2 py-1 bg-gray-200 rounded hover:bg-gray-300">
+                            📋 Copy
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
 
-            totalUrlsEl.textContent = urls.length;
-            totalClicksEl.textContent = totalClicks;
-            avgClicksEl.textContent = avgClicks;
+        function updateRecentActivityTable(recentActivity) {
+            const tbody = document.getElementById('recentActivityTableBody');
+            
+            if (recentActivity.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="px-4 py-8 text-center text-gray-500">No recent activity.</td></tr>';
+                return;
+            }
 
-            tbody.innerHTML = urls.map(url => `
+            tbody.innerHTML = recentActivity.map(url => `
                 <tr class="hover:bg-gray-50">
                     <td class="px-4 py-3 text-sm">
                         <span class="font-mono bg-gray-100 px-2 py-1 rounded">${url.short_code}</span>
@@ -125,33 +268,68 @@
                         </a>
                     </td>
                     <td class="px-4 py-3 text-sm">
-                        <div class="flex items-center gap-2">
-                            <span class="font-mono text-xs bg-blue-100 px-2 py-1 rounded">${window.location.origin}/${url.short_code}</span>
-                            <button onclick="copyToClipboard('${window.location.origin}/${url.short_code}')" class="text-xs px-2 py-1 bg-gray-200 rounded hover:bg-gray-300">
-                                📋
-                            </button>
-                        </div>
-                    </td>
-                    <td class="px-4 py-3 text-sm">
                         <span class="font-semibold ${url.clicks > 0 ? 'text-green-600' : 'text-gray-400'}">${url.clicks}</span>
                     </td>
                     <td class="px-4 py-3 text-sm text-gray-600">
                         ${formatDate(url.created_at)}
                     </td>
                     <td class="px-4 py-3 text-sm">
-                        <button onclick="window.open('/api/stats/${url.short_code}', '_blank')" class="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200">
-                            📊 Stats
+                        <button onclick="copyToClipboard('${window.location.origin}/${url.short_code}')" class="text-xs px-2 py-1 bg-gray-200 rounded hover:bg-gray-300">
+                            📋 Copy
                         </button>
                     </td>
                 </tr>
             `).join('');
         }
 
+        async function refreshData() {
+            const data = await fetchAnalytics();
+            if (!data) return;
+
+            // Update all sections
+            updateOverviewCards(data.overview);
+            updateCharts(data.dailyStats || [], data.visitorStats || []);
+            updateTopUrlsTable(data.topUrls || []);
+            updateRecentActivityTable(data.recentActivity || []);
+            
+            // Update total visitors
+            const totalVisitors = data.visitorStats?.reduce((sum, v) => sum + (v.total_visitors || 0), 0) || 0;
+            document.getElementById('totalVisitors').textContent = totalVisitors;
+        }
+
+        async function logout() {
+            try {
+                await fetch('/api/admin/logout', {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+                window.location.href = '/admin/login';
+            } catch (error) {
+                console.error('Logout error:', error);
+            }
+        }
+
+        // Check authentication on load
+        async function checkAuth() {
+            try {
+                const response = await fetch('/api/admin/analytics', {
+                    credentials: 'include'
+                });
+                if (response.status === 401) {
+                    window.location.href = '/admin/login';
+                    return;
+                }
+                refreshData();
+            } catch (error) {
+                window.location.href = '/admin/login';
+            }
+        }
+
         // Auto-refresh every 30 seconds
         setInterval(refreshData, 30000);
 
         // Initial load
-        refreshData();
+        checkAuth();
     </script>
 </body>
 </html>
