@@ -39,6 +39,11 @@ app.get('/', (req, res) => {
 });
 
 // Serve admin.html for admin route
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
+// Serve admin.html for admin.html route (for compatibility)
 app.get('/admin.html', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
