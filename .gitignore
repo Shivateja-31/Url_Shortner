@@ -1,0 +1,4 @@
+node_modules/
+urls.db
+.env
+*.log

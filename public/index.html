@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Shortener</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+    <div class="container mx-auto px-4 py-12">
+        <div class="max-w-2xl mx-auto">
+            <h1 class="text-4xl font-bold text-center text-gray-800 mb-8">
+                🔗 URL Shortener
+            </h1>
+            
+            <div class="bg-white rounded-lg shadow-lg p-8">
+                <div class="mb-6">
+                    <label for="url" class="block text-sm font-medium text-gray-700 mb-2">
+                        Enter your long URL
+                    </label>
+                    <div class="flex gap-2">
+                        <input 
+                            type="url" 
+                            id="url" 
+                            placeholder="https://example.com/very/long/url..."
+                            class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                        <button 
+                            onclick="shortenUrl()"
+                            class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                        >
+                            Shorten
+                        </button>
+                    </div>
+                </div>
+
+                <div id="result" class="hidden">
+                    <div class="border-t pt-6">
+                        <h3 class="text-lg font-semibold text-gray-700 mb-3">Your shortened URL:</h3>
+                        <div class="flex items-center gap-2 bg-gray-50 p-3 rounded-lg">
+                            <input 
+                                type="text" 
+                                id="shortUrl" 
+                                readonly
+                                class="flex-1 bg-transparent border-none focus:outline-none"
+                            >
+                            <button 
+                                onclick="copyUrl()"
+                                class="px-4 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition-colors text-sm"
+                            >
+                                Copy
+                            </button>
+                        </div>
+                        <div id="stats" class="mt-4 text-sm text-gray-600"></div>
+                    </div>
+                </div>
+
+                <div id="error" class="hidden mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700"></div>
+            </div>
+
+            <div class="mt-8 text-center text-gray-600 text-sm">
+                <p>Fast, simple, and reliable URL shortening service</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function shortenUrl() {
+            const urlInput = document.getElementById('url');
+            const url = urlInput.value.trim();
+            
+            if (!url) {
+                showError('Please enter a URL');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/shorten', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url }),
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showResult(data);
+                } else {
+                    showError(data.error || 'Something went wrong');
+                }
+            } catch (error) {
+                showError('Network error. Please try again.');
+            }
+        }
+
+        function showResult(data) {
+            const resultDiv = document.getElementById('result');
+            const shortUrlInput = document.getElementById('shortUrl');
+            const statsDiv = document.getElementById('stats');
+            const errorDiv = document.getElementById('error');
+
+            shortUrlInput.value = data.shortUrl;
+            statsDiv.innerHTML = `Original: <span class="font-medium">${data.originalUrl}</span>`;
+            
+            resultDiv.classList.remove('hidden');
+            errorDiv.classList.add('hidden');
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            const resultDiv = document.getElementById('result');
+            
+            errorDiv.textContent = message;
+            errorDiv.classList.remove('hidden');
+            resultDiv.classList.add('hidden');
+        }
+
+        function copyUrl() {
+            const shortUrlInput = document.getElementById('shortUrl');
+            shortUrlInput.select();
+            document.execCommand('copy');
+            
+            // Change button text temporarily
+            const button = event.target;
+            const originalText = button.textContent;
+            button.textContent = 'Copied!';
+            button.classList.remove('bg-green-600', 'hover:bg-green-700');
+            button.classList.add('bg-gray-600');
+            
+            setTimeout(() => {
+                button.textContent = originalText;
+                button.classList.remove('bg-gray-600');
+                button.classList.add('bg-green-600', 'hover:bg-green-700');
+            }, 2000);
+        }
+
+        // Allow Enter key to submit
+        document.getElementById('url').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                shortenUrl();
+            }
+        });
+    </script>
+</body>
+</html>
