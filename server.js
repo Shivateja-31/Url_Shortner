@@ -11,7 +11,14 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.static('public'));
+app.use(express.static('public', { 
+  root: __dirname,
+  setHeaders: (res, path) => {
+    if (path.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-cache');
+    }
+  }
+}));
 app.use(Analytics());
 
 // Database setup
@@ -34,6 +41,11 @@ function generateShortCode() {
 }
 
 // Routes
+// Serve index.html for root route
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
 app.post('/api/shorten', (req, res) => {
   const { url } = req.body;
   
