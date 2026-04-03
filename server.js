@@ -296,7 +296,7 @@ app.post('/api/shorten', (req, res) => {
   }
 
   const shortCode = generateShortCode();
-  const shortUrl = `${req.protocol}://${req.get('host')}/${shortCode}`;
+  const shortUrl = `https://${req.get('host')}/${shortCode}`;
 
   db.run(
     'INSERT INTO urls (short_code, original_url) VALUES (?, ?)',
